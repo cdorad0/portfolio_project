@@ -1,0 +1,157 @@
+---
+title: "Project Part 2: Data Cleaning and Rough Draft"
+author: "Catalina Dorado"
+format: html
+execute: 
+  message: false
+  warning: false
+---
+
+
+## Part 1 - Data Description
+
+"Reef Check" monitors marine ecosystems, measuring abundance of macroalgae, invertebrates, and fish to support marine conservation and management. This analysis uses data from long term MPA monitoring of invertebrates in kelp forests, [DataONE](https://search.dataone.org/view/doi%3A10.25494%2FP69885).
+
+
+## Part 2 - Data Cleaning
+
+Packages used for data cleaning and wrangling include: "tidyverse", "stringr", "lubridate", and "readr". 
+Dataset was read in as "RCCA_invertebrate_swath_data2.csv" and explored using `dim()` and `summary()`. Dataframe was filtered through `Classcode` for seastar species, outputing the results in order by year. This dataframe was filtered through again through `Classcode` for batstars and saved under dataframe name. Ideal variables were selected batstars were selected and filtered to search for site ("Breakwater") to use for data visualizations. These data frames were assigned unique object names for later. Batstar populations were grouped by `Site`, `Year`, and summarized for an average count. Dataframes were then joined using `bind_rows()` and ordered by year. Dataset was created and saved using dataframes for batstar average counts at Breakwater. 
+
+```{r load-packages, include = FALSE}
+# Loading packages
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(readr)
+```
+
+
+```{r load-data, include = FALSE}
+# Load in the data
+rcca_data <- read_csv("~/Documents/STATS_210_Spring_25/Project/project_final/raw-data/RCCA_invertebrate_swath_data2.csv", show_col_types = FALSE)
+
+# View data
+rcca_data
+```
+
+```{r explore, include = FALSE}
+# Explore dataset
+dim(rcca_data)
+summary(rcca_data)
+```
+
+```{r filter-seastar, include = FALSE}
+# Select species
+seastar <- rcca_data |>
+  filter(str_detect(Classcode, "star")) |>
+  arrange(Year)
+
+seastar
+```
+
+```{r arrange-batstar, include = FALSE}
+# Select species
+batstar <- seastar |>
+  filter(Classcode == "bat star") |>
+  arrange(Year)
+
+batstar
+```
+
+```{r select-site1, include = FALSE}
+# Select site (Breakwater)
+batstar_bw <- batstar |>
+  select(Site, Year, SurveyDate, Classcode, Amount) |>
+  filter(Site == "Breakwater")
+
+batstar_bw
+```
+
+```{r select-site2}
+# Select site (Asilomar)
+batstar_as <- batstar |>
+  select(Site, Year, SurveyDate, Classcode, Amount) |>
+  filter(Site == "Asilomar")
+
+batstar_as
+```
+
+```{r summarise-avg1, include = FALSE}
+batstar_bwAvg <- batstar_bw |>
+  group_by(Site, Year) |>
+  summarise(AverageAmount = mean(Amount, na.rm = TRUE), .groups = "drop")
+
+# View the summarized data
+batstar_bwAvg
+```
+
+```{r summarise-avg2, include = FALSE}
+batstar_asAvg <- batstar_as |>
+  group_by(Site, Year) |>
+  summarise(AverageAmount = mean(Amount, na.rm = TRUE), .groups = "drop")
+
+# View the summarized data
+batstar_asAvg
+```
+
+```{r clean-data, include = FALSE}
+# Clean data set number 1:
+batstar_bwAvg
+
+# Clean data set number 2:
+batstar_asAvg
+
+```
+
+
+```{r save-data}
+# Data set number 1:
+write.csv(batstar_bwAvg, 
+          "~/Documents/STATS_210_Spring_25/Project/project_final/raw-data/batstar_bwAvg.csv", 
+          row.names = FALSE)
+```
+
+
+## Part 3 - Data Visualizations
+
+```{r graph-Breakwater}
+# Graphs batstar count at breakwater
+batstar_bwAvg |> ggplot(aes(x = Year, y = AverageAmount)) + 
+  geom_point() + 
+  geom_smooth(fill = "steelblue") + 
+  labs(x = "Years", 
+       y = "Average Count", 
+       title = "Average Amount of Bat Stars at Breakwater from 2006 to 2019") + 
+  scale_x_continuous(breaks = seq(min(2006), max(2019), by = 1))
+```
+
+Figure 1. Smooth line graph for the average amount of bat stars at Breakwater from 2006 to 2019.
+
+
+```{r}
+batstar_bwAvg |> ggplot(aes(x = Year, y = AverageAmount)) + 
+  geom_line(color = "steelblue") + 
+  geom_point() + 
+  labs(x = "Years", 
+       y = "Average Count", 
+       title = "Average Amount of Bat Stars at Breakwater from 2006 to 2019") + 
+  scale_x_continuous(breaks = seq(min(2006), max(2019), by = 1))
+```
+
+Figure 2. Line graph for the average amount of bat stars at Breakwater from 2006 to 2019, emphasizing each year.
+
+
+```{r}
+batstar_bwAvg |> ggplot(aes(x = Year, y = AverageAmount)) + 
+  geom_col(fill = "steelblue") + 
+  labs(x = "Years", 
+       y = "Average Count", 
+       title = "Average Amount of Bat Stars at Breakwater from 2006 to 2019") + 
+  scale_x_continuous(breaks = seq(min(2006), max(2019), by = 1)) + 
+  scale_y_continuous(breaks = seq(min(0), max(100), by = 10))
+```
+
+Figure 3. Bar graph for the average amount of bat stars at Breakwater from 2006 to 2019, visually comparing populations.
+
+
